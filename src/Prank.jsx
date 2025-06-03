@@ -11,6 +11,7 @@ const Prank = () => {
   const [showSecondSnackbar, setShowSecondSnackbar] = useState(false); // Second Snackbar
   const [showBSOD, setShowBSOD] = useState(false); // State for Blue Screen of Death
   const [showLeaveButton, setShowLeaveButton] = useState(false); // Button to leave the site
+  const [isOverlayVisible, setIsOverlayVisible] = useState(false); // State for dark overlay
   const terminalRef = useRef(null);
 
   // Array of loading messages to simulate actions
@@ -46,7 +47,7 @@ const Prank = () => {
     "[UPLOAD] Sending files to command server...",
     "[INIT] Replacing system boot sequence...",
     "[BREACH] Full root access granted...",
-    "[WIPE] Erasing storgae drive",
+    "[WIPE] Erasing storage drive",
     "[LOCK] Encrypting all user data...",
     "[FINALIZE] Uploading ransomware payload...",
     "[FAILSAFE] Upload done. Initiating overload...",
@@ -126,6 +127,7 @@ const Prank = () => {
       }, 1000);
       return () => clearInterval(timer);
     } else if (countdown === 0) {
+      setIsOverlayVisible(true); // Show dark overlay
       setTimeout(() => setShowFirstSnackbar(true), 1000); // Show first Snackbar
     }
   }, [countdown, progress]);
@@ -135,13 +137,14 @@ const Prank = () => {
     if (showFirstSnackbar) {
       setTimeout(() => {
         setShowFirstSnackbar(false); // Hide first Snackbar
-        setShowSecondSnackbar(true); // Show second Snackbar
+        setTimeout(() => setShowSecondSnackbar(true), 500); // Show second Snackbar
       }, 3000); // Wait 3 seconds
     }
 
     if (showSecondSnackbar) {
       setTimeout(() => {
         setShowSecondSnackbar(false); // Hide second Snackbar
+        setIsOverlayVisible(false); // Hide dark overlay
         setShowBSOD(true); // Show Blue Screen of Death
       }, 3000); // Wait 3 seconds
     }
@@ -149,7 +152,7 @@ const Prank = () => {
     if (showBSOD) {
       playAlarmSound(); // Start alarm sound
       setTimeout(() => {
-        alert("This site is unsafe. Please leave immediately!"); // Browser-level alert
+        alert("This site is unsafe. Leave website"); // Browser-level alert
         setShowLeaveButton(true); // Show button to leave the site
       }, 5000); // Wait 5 seconds
     }
@@ -162,8 +165,8 @@ const Prank = () => {
     }
   }, [terminalLogs]);
 
-   // Prevent user from leaving the site
-   useEffect(() => {
+  // Prevent user from leaving the site
+  useEffect(() => {
     const handleBeforeUnload = (e) => {
       e.preventDefault();
       e.returnValue = ""; // Required for Chrome
@@ -191,14 +194,21 @@ const Prank = () => {
 
   return (
     <div
-      className={`fixed inset-0 bg-black flex flex-col items-center justify-center z-50 overflow-hidden screen-overlay ${
+      className={`fixed inset-0 bg-black flex flex-col items-center px-4 justify-center z-50 overflow-hidden screen-overlay ${
         isShaking ? "shake-effect" : ""
       }`}
     >
+      {/* Dark Overlay */}
+      {isOverlayVisible && (
+        <div className="fixed inset-0 bg-black opacity-90 z-40"></div>
+      )}
+
       {/* Header */}
-     
       {/* Progress Bar */}
-      <div className="w-64 bg-gray-800 rounded-full overflow-hidden shadow-lg">
+      <p className="text-green-500 mt-4 text-2xl font-bold font-mono animate-pulse">
+        FINISHING SETUP IN: {countdown}s
+      </p>
+      <div className="w-64 mt-2 bg-gray-800 rounded-full overflow-hidden shadow-lg">
         <div
           className={`h-2 bg-red-500 transition-all duration-300 ${
             progress % 10 === 0 ? "animate-pulse" : ""
@@ -208,14 +218,12 @@ const Prank = () => {
       </div>
 
       {/* Countdown Timer */}
-      <p className="text-green-500 mt-4 text-2xl font-bold font-mono animate-pulse">
-        COMPLETE IN: {countdown}s
-      </p>
+      
 
       {/* Unified Terminal Logs */}
       <div
         ref={terminalRef}
-        className="mt-4 w-full h-[60vh] overflow-y-auto bg-black border border-red-500 rounded p-2 font-mono text-sm"
+        className="mt-4 w-full h-[80vh] overflow-y-auto bg-black border border-red-500 rounded p-2 font-mono text-sm px-2"
         style={{ scrollbarWidth: "none" }} // Hide scrollbar
       >
         {terminalLogs.map((log, index) => (
@@ -227,15 +235,15 @@ const Prank = () => {
 
       {/* First Snackbar */}
       {showFirstSnackbar && (
-        <div className="fixed w-full top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-green-900 text-white p-4 rounded shadow-lg z-50">
-          <p className="text-md font-bold">Your files have been permanently deleted.</p>
+        <div className="fixed w-3/4 top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-red-900 text-white p-4 rounded shadow-lg z-50">
+          <p className="text-sm font-bold text-center">Your files have been permanently deleted.</p>
         </div>
       )}
 
       {/* Second Snackbar */}
       {showSecondSnackbar && (
-        <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-red-900 text-white p-4 rounded shadow-lg z-50">
-          <p className="text-lg font-bold">You no longer have access to this device.</p>
+        <div className="fixed w-3/4  top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-red-900 text-white p-4 rounded shadow-lg z-50">
+          <p className="text-sm font-bold text-center">You no longer have access to this device.</p>
         </div>
       )}
 
@@ -255,9 +263,9 @@ const Prank = () => {
 
       {/* Leave Site Button */}
       {showLeaveButton && (
-        <div className="fixed bottom-10 left-1/2 transform -translate-x-1/2 bg-green-600 text-white p-2 rounded shadow-lg cursor-pointer hover:bg-red-700 transition-colors z-50">
-          <button onClick={() => window.location.href = "www.linkedin.com/in/jessica-emefa-torgbenu-banini-609765270/"}> 
-            Leave 
+        <div className="fixed bottom-10 left-1/2 transform -translate-x-1/2 bg-green-600 text-white p-2 px-7 rounded shadow-lg cursor-pointer hover:bg-green-700 transition-colors z-50">
+          <button onClick={() => window.location.href = "www.linkedin.com/in/jessica-emefa-torgbenu-banini-609765270/"}>
+            Leave
           </button>
         </div>
       )}
