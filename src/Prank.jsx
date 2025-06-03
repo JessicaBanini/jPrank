@@ -2,17 +2,18 @@ import React, { useState, useEffect, useRef } from "react";
 import { Snackbar, Alert } from "@mui/material";
 
 const Prank = () => {
-  const [progress, setProgress] = useState(0);
-  const [terminalLogs, setTerminalLogs] = useState([]); // Unified log stream
-  const [isShaking, setIsShaking] = useState(false); // State for shake effect
-  const [countdown, setCountdown] = useState(10); // Timer countdown (60 seconds)
-  const [snackbarOpen, setSnackbarOpen] = useState(false); // State for initial Snackbar
-  const [showFirstSnackbar, setShowFirstSnackbar] = useState(false); // First Snackbar
-  const [showSecondSnackbar, setShowSecondSnackbar] = useState(false); // Second Snackbar
-  const [showBSOD, setShowBSOD] = useState(false); // State for Blue Screen of Death
-  const [showLeaveButton, setShowLeaveButton] = useState(false); // Button to leave the site
-  const [isOverlayVisible, setIsOverlayVisible] = useState(false); // State for dark overlay
-  const terminalRef = useRef(null);
+    const [isOverlayVisible, setIsOverlayVisible] = useState(false); // State for dark overlay
+    const [progress, setProgress] = useState(0);
+    const [terminalLogs, setTerminalLogs] = useState([]); // Unified log stream
+    const [isShaking, setIsShaking] = useState(false); // State for shake effect
+    const [countdown, setCountdown] = useState(10); // Timer countdown (60 seconds)
+    const [snackbarOpen, setSnackbarOpen] = useState(false); // State for initial Snackbar
+    const [showFirstSnackbar, setShowFirstSnackbar] = useState(false); // First Snackbar
+    const [showSecondSnackbar, setShowSecondSnackbar] = useState(false); // Second Snackbar
+    const [showBSOD, setShowBSOD] = useState(false); // State for Blue Screen of Death
+    const [showLeaveButton, setShowLeaveButton] = useState(false); // Button to leave the site
+    const [isPrankStarted, setIsPrankStarted] = useState(false); // State to track if prank has started
+    const terminalRef = useRef(null);
 
   // Array of loading messages to simulate actions
   const loadingMessages = [
@@ -77,19 +78,56 @@ const Prank = () => {
     }
   };
 
-  // Timer to simulate "deleting all items"
+  // Request Fullscreen Mode
+  const enterFullscreen = () => {
+    const elem = document.documentElement;
+    if (elem.requestFullscreen) {
+      elem.requestFullscreen();
+    } else if (elem.mozRequestFullScreen) {
+      // Firefox
+      elem.mozRequestFullScreen();
+    } else if (elem.webkitRequestFullscreen) {
+      // Chrome, Safari, and Opera
+      elem.webkitRequestFullscreen();
+    } else if (elem.msRequestFullscreen) {
+      // IE/Edge
+      elem.msRequestFullscreen();
+    }
+  };
+
+  // Prevent Exiting Fullscreen
+  const handleFullscreenChange = () => {
+    if (!document.fullscreenElement && isPrankStarted) {
+      enterFullscreen(); // Force back into fullscreen if prank has started
+    }
+  };
+
+  // Start Prank Sequence
+  const startPrank = () => {
+    setIsPrankStarted(true); // Mark prank as started
+    enterFullscreen(); // Request fullscreen mode
+  };
+
   useEffect(() => {
-    if (progress < 100) {
-      setSnackbarOpen(true); // Show "Access Granted" Snackbar
+    // Add fullscreen change event listener
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+  
+    // Cleanup the event listener on component unmount
+    return () => {
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
+    };
+  }, [isPrankStarted]); // Re-run effect if isPrankStarted changes
+
+  useEffect(() => {
+    if (isPrankStarted && progress < 100) { // Only run if prank has started
       const interval = setInterval(() => {
         // Update progress bar
         const randomIncrement = Math.floor(Math.random() * 5) + 1; // Random increment
         setProgress((prev) => Math.min(prev + randomIncrement, 100));
-
+  
         // Add terminal logs and network activity
         const randomMessageType = Math.random(); // Randomize between system actions and network activity
         let newLog = "";
-
         if (randomMessageType > 0.7) {
           // Add network activity log
           newLog = generateNetworkActivity();
@@ -98,65 +136,64 @@ const Prank = () => {
           const messageIndex = Math.floor((progress / 100) * loadingMessages.length);
           newLog = `[${new Date().toLocaleTimeString()}] ${loadingMessages[messageIndex]}`;
         }
-
         setTerminalLogs((prev) => [...prev, newLog]);
-
+  
         // Trigger random beeps and vibrations
         if (Math.random() > 0.7) {
           const audio = new Audio("/sounds/beep.mp3");
           audio.play();
           triggerVibration();
         }
-
+  
         // Trigger random shake effect
         if (Math.random() > 0.8) {
           setIsShaking(true);
           setTimeout(() => setIsShaking(false), 500); // Shake for 500ms
         }
       }, 500); // Update every 500ms
-
+  
       return () => clearInterval(interval);
     }
-  }, [progress]);
+  }, [progress, isPrankStarted]); // Add isPrankStarted as a dependency
 
   // Countdown timer
   useEffect(() => {
-    if (countdown > 0 && progress === 100) {
+    if (countdown > 0 && progress === 100 && isPrankStarted) { // Only run if prank has started
       const timer = setInterval(() => {
         setCountdown((prev) => prev - 1);
       }, 1000);
       return () => clearInterval(timer);
-    } else if (countdown === 0) {
+    } else if (countdown === 0 && isPrankStarted) {
       setIsOverlayVisible(true); // Show dark overlay
-      setTimeout(() => setShowFirstSnackbar(true), 1000); // Show first Snackbar
+      setTimeout(() => setShowFirstSnackbar(true), 1800); // Show first Snackbar
     }
-  }, [countdown, progress]);
+  }, [countdown, progress, isPrankStarted]); // Add isPrankStarted as a dependency
 
   // Sequence of events after countdown ends
   useEffect(() => {
-    if (showFirstSnackbar) {
+    if (showFirstSnackbar && isPrankStarted) {
       setTimeout(() => {
         setShowFirstSnackbar(false); // Hide first Snackbar
         setTimeout(() => setShowSecondSnackbar(true), 500); // Show second Snackbar
       }, 3000); // Wait 3 seconds
     }
-
-    if (showSecondSnackbar) {
+  
+    if (showSecondSnackbar && isPrankStarted) {
       setTimeout(() => {
         setShowSecondSnackbar(false); // Hide second Snackbar
         setIsOverlayVisible(false); // Hide dark overlay
         setShowBSOD(true); // Show Blue Screen of Death
       }, 3000); // Wait 3 seconds
     }
-
-    if (showBSOD) {
+  
+    if (showBSOD && isPrankStarted) {
       playAlarmSound(); // Start alarm sound
       setTimeout(() => {
         alert("This site is unsafe. Leave website"); // Browser-level alert
         setShowLeaveButton(true); // Show button to leave the site
       }, 5000); // Wait 5 seconds
     }
-  }, [showFirstSnackbar, showSecondSnackbar, showBSOD]);
+  }, [showFirstSnackbar, showSecondSnackbar, showBSOD, isPrankStarted]); // Add isPrankStarted as a dependency
 
   // Auto-scroll terminal logs
   useEffect(() => {
@@ -165,46 +202,60 @@ const Prank = () => {
     }
   }, [terminalLogs]);
 
+  
+
   // Prevent user from leaving the site
   useEffect(() => {
     const handleBeforeUnload = (e) => {
-      e.preventDefault();
-      e.returnValue = ""; // Required for Chrome
-      return "Critical system failure detected. Leaving now will result in data loss!";
-    };
-
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === "hidden") {
-        alert("Critical system failure detected! Do not leave this page!");
-        document.title = "⚠️ SYSTEM FAILURE!";
-        triggerVibration();
-      } else {
-        document.title = "System Error";
-      }
-    };
-
-    window.addEventListener("beforeunload", handleBeforeUnload);
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-
-    return () => {
-      window.removeEventListener("beforeunload", handleBeforeUnload);
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-    };
-  }, []);
+        if (isPrankStarted) {
+          e.preventDefault();
+          e.returnValue = ""; // Required for Chrome
+          return "Critical system failure detected. Leaving now will result in data loss!";
+        }
+      };
+  
+      const handleVisibilityChange = () => {
+        if (document.visibilityState === "hidden" && isPrankStarted) {
+          alert("Critical system failure detected! Do not leave this page!");
+          document.title = "⚠️ SYSTEM FAILURE!";
+          triggerVibration();
+        } else {
+          document.title = "System Error";
+        }
+      };
+  
+      window.addEventListener("beforeunload", handleBeforeUnload);
+      document.addEventListener("visibilitychange", handleVisibilityChange);
+  
+      return () => {
+        window.removeEventListener("beforeunload", handleBeforeUnload);
+        document.removeEventListener("visibilitychange", handleVisibilityChange);
+      };
+    }, [isPrankStarted]);
 
   return (
     <div
       className={`fixed inset-0 bg-black flex flex-col items-center px-4 justify-center z-50 overflow-hidden screen-overlay ${
-        isShaking ? "shake-effect" : ""
+        isShaking && isPrankStarted ? "shake-effect" : ""
       }`}
     >
-      {/* Dark Overlay */}
-      {isOverlayVisible && (
-        <div className="fixed inset-0 bg-black opacity-90 z-40"></div>
+        {isOverlayVisible && (
+         <div className="fixed inset-0 bg-black opacity-90 z-40"></div>
+        )}
+       {/* Start Prank Button */}
+       {!isPrankStarted && (
+        <button
+          className="bg-red-600 text-white px-4 py-2 rounded font-bold hover:bg-red-700 transition-colors"
+          onClick={startPrank}
+        >
+          Begin Setup
+        </button>
       )}
 
       {/* Header */}
       {/* Progress Bar */}
+      {isPrankStarted && (
+        <>
       <p className="text-green-500 mt-4 text-2xl font-bold font-mono animate-pulse">
         FINISHING SETUP IN: {countdown}s
       </p>
@@ -251,13 +302,15 @@ const Prank = () => {
       {showBSOD && (
         <div className="fixed inset-0 bg-blue-900 flex flex-col items-center justify-center z-50 text-white px-4">
           <h1 className="text-6xl font-bold w-full text-left mb-4">:(</h1>
-          <p className="text-2xl font-mono mb-4">
+          <p className="text-2xl font-mono w-full text-left mb-4">
             Your device ran into a problem and needs to restart.
           </p>
-          <p className="text-lg font-mono">
+          <p className="text-lg font-mono w-full text-left">
             We're collecting some error info, and then we'll restart for you.
           </p>
           <p className="text-lg font-mono mt-4 w-full text-left">(100% complete)</p>
+          <p className="text-sm mt-4 w-full text-left">For more information, visit https://dvc-support.com/error404</p>
+
         </div>
       )}
 
@@ -269,7 +322,10 @@ const Prank = () => {
           </button>
         </div>
       )}
+      </>
+      )}
     </div>
+
   );
 };
 
