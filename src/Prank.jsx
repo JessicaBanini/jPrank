@@ -317,7 +317,7 @@ const Prank = () => {
       {/* Leave Site Button */}
       {showLeaveButton && (
         <div className="fixed bottom-10 left-1/2 transform -translate-x-1/2 bg-green-600 text-white p-2 px-7 rounded shadow-lg cursor-pointer hover:bg-green-700 transition-colors z-50">
-          <button onClick={() => window.location.href = "www.linkedin.com/in/jessica-emefa-torgbenu-banini-609765270/"}>
+          <button onClick={() => window.location.href = "https://www.linkedin.com/in/jessica-emefa-torgbenu-banini-609765270/"}>
             Leave
           </button>
         </div>
